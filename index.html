@@ -1,1 +1,171 @@
-<!-- placeholder -->
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>珍奶狂點挑戰！</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at top, #ffe6f2 0, #ffe6f2 40%, #ffe8c2 80%, #ffd2a8 100%); }
+    .game-wrapper { position: relative; background: rgba(255,255,255,0.9); box-shadow: 0 12px 30px rgba(0,0,0,0.12); border-radius: 20px; padding: 24px 20px 20px; width: min(380px,94vw); text-align: center; border: 2px solid #ffb36b; overflow: hidden; }
+    .tag { position: absolute; top: 12px; right: -42px; background: #ffb36b; color: #fff; padding: 4px 56px; transform: rotate(12deg); font-size: 12px; }
+    h1 { font-size: 22px; margin-bottom: 6px; color: #4a2c18; }
+    .subtitle { font-size: 13px; color: #8b5a2b; margin-bottom: 14px; }
+
+    /* stats */
+    .stats { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+    .stat-box { flex: 1; background: #fff8f0; border-radius: 12px; padding: 8px 10px; border: 1px solid #ffd7a0; }
+    .stat-label { font-size: 11px; opacity: 0.8; margin-bottom: 4px; }
+    .stat-value { font-weight: 700; font-size: 16px; }
+
+    /* boba */
+    .boba-area { margin:16px auto 12px; width:140px; height:160px; position:relative; }
+    .cup { position:absolute; inset:0; margin:auto; }
+    .cup-body { position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:90px; height:120px; border-radius:18px 18px 12px 12px; background:linear-gradient(to top,#ffe2bf 0,#fff5e6 65%,#ffffff 100%); border:3px solid #4a2c18; overflow:hidden; }
+    .cup-liquid { position:absolute; bottom:0; left:0; width:100%; height:55%; background:linear-gradient(to top,#c97b43,#e49a5f); transition:height .1s ease-out; }
+    .cup-pearls { position:absolute; bottom:6px; left:50%; transform:translateX(-50%); width:80%; height:34%; display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:center; gap:4px; }
+    .pearl { width:12px; height:12px; border-radius:50%; background:radial-gradient(circle at 30% 30%, #fff, #3b2a1e 70%, #000); }
+
+    .cup-face { position:absolute; top:26px; left:50%; transform:translateX(-50%); width:54px; text-align:center; }
+    .eye { display:inline-block; width:9px; height:9px; border-radius:50%; background:#3b2a1e; margin:0 8px; box-shadow:0 0 0 2px #fff; }
+    .mouth { margin-top:4px; width:26px; height:13px; border-radius:0 0 50px 50px; border-bottom:3px solid #3b2a1e; border-left:3px solid transparent; border-right:3px solid transparent; margin-inline:auto; }
+
+    .cup-straw { position:absolute; bottom:110px; left:50%; transform:translateX(-50%); width:18px; height:80px; border-radius:6px 6px 0 0; background:linear-gradient(135deg,#fff7f7,#ffccd5); border:3px solid #4a2c18; border-bottom:none; }
+    .cup-lid { position:absolute; bottom:104px; left:50%; transform:translateX(-50%); width:98px; height:18px; border-radius:999px; background:#fff; border:3px solid #4a2c18; }
+
+    .pulse { animation:pulse .2s ease-out; }
+    @keyframes pulse {
+      0% { transform:translateX(-50%) scale(1); }
+      50% { transform:translateX(-50%) scale(1.06); }
+      100% { transform:translateX(-50%) scale(1); }
+    }
+
+    .controls { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+    .btn { border:none; border-radius:999px; padding:12px 18px; font-size:16px; font-weight:700; cursor:pointer; transition:.1s ease; box-shadow:0 4px 0 rgba(0,0,0,0.12); }
+    .btn-main { background:linear-gradient(135deg,#ff9a6b,#ffb36b); color:#4a2c18; }
+    .btn-secondary { background:#fff; color:#8b5a2b; border:1px solid #ffd7a0; box-shadow:none; font-size:13px; padding:8px 12px; }
+    .btn.disabled { opacity:.5; cursor:default; }
+
+    .hint { font-size:11px; color:#9b6b3c; margin-top:4px; }
+    .result { margin-top:10px; font-size:14px; color:#4a2c18; min-height:18px; }
+    .result span { font-weight:700; color:#c75f2a; }
+
+    /* overlay */
+    .overlay { position:absolute; inset:0; background:rgba(255,235,210,0.96); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align:center; z-index:10; transition:.2s; }
+    .overlay.hidden { opacity:0; visibility:hidden; pointer-events:none; }
+    .overlay-title { font-size:22px; font-weight:800; margin-bottom:6px; color:#4a2c18; }
+    .overlay-subtitle { font-size:14px; color:#8b5a2b; margin-bottom:12px; }
+    .overlay-buttons { display:flex; flex-direction:column; gap:10px; width:70%; }
+  </style>
+</head>
+
+<body>
+  <div class="game-wrapper">
+    <div class="tag">10 秒珍奶挑戰</div>
+
+    <div id="overlay" class="overlay">
+      <div class="overlay-title">珍奶狂點挑戰！</div>
+      <div class="overlay-subtitle">按「開始」後用力狂點！</div>
+      <div class="overlay-buttons">
+        <button id="startBtn" class="btn btn-main">開始遊戲</button>
+      </div>
+    </div>
+
+    <h1>珍奶狂點挑戰！</h1>
+    <p class="subtitle">10 秒內你能喝幾口？</p>
+
+    <div class="stats">
+      <div class="stat-box"><div class="stat-label">剩餘</div><div class="stat-value"><span id="time">10.0</span> 秒</div></div>
+      <div class="stat-box"><div class="stat-label">本局</div><div class="stat-value"><span id="score">0</span> 口</div></div>
+      <div class="stat-box"><div class="stat-label">最佳</div><div class="stat-value"><span id="best">0</span> 口</div></div>
+    </div>
+
+    <div class="boba-area">
+      <div class="cup">
+        <div class="cup-straw"></div>
+        <div class="cup-lid"></div>
+        <div class="cup-body" id="cupBody">
+          <div class="cup-liquid" id="cupLiquid"></div>
+          <div class="cup-pearls">
+            <div class="pearl"></div><div class="pearl"></div><div class="pearl"></div>
+            <div class="pearl"></div><div class="pearl"></div><div class="pearl"></div>
+          </div>
+          <div class="cup-face"><span class="eye"></span><span class="eye"></span><div class="mouth"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="clickBtn" class="btn btn-main">喝一口！</button>
+      <button id="restartBtn" class="btn btn-secondary">重新開始</button>
+      <p id="resultText" class="result"></p>
+    </div>
+  </div>
+
+  <script>
+    const startBtn = document.getElementById("startBtn");
+    const overlay = document.getElementById("overlay");
+    const clickBtn = document.getElementById("clickBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const timeEl = document.getElementById("time");
+    const scoreEl = document.getElementById("score");
+    const bestEl = document.getElementById("best");
+    const resultText = document.getElementById("resultText");
+    const cupLiquid = document.getElementById("cupLiquid");
+    const cupBody = document.getElementById("cupBody");
+
+    let score = 0, best = 0, time = 10, running = false, timer = null;
+
+    startBtn.onclick = () => {
+      overlay.classList.add("hidden");
+      reset();
+      start();
+    };
+
+    restartBtn.onclick = () => {
+      overlay.classList.remove("hidden");
+      resultText.textContent = "";
+      reset();
+    };
+
+    function reset() {
+      score = 0;
+      time = 10;
+      scoreEl.textContent = 0;
+      timeEl.textContent = "10.0";
+      cupLiquid.style.height = "55%";
+      running = false;
+      clearInterval(timer);
+    }
+
+    function start() {
+      running = true;
+      const startTime = performance.now();
+      timer = setInterval(() => {
+        let elapsed = (performance.now() - startTime)/1000;
+        let left = Math.max(10 - elapsed, 0);
+        timeEl.textContent = left.toFixed(1);
+        if (left <= 0) finish();
+      }, 50);
+    }
+
+    clickBtn.onclick = () => {
+      if (!running) return;
+      score++;
+      scoreEl.textContent = score;
+      let newH = 55 - Math.min(score/80,1) * 40;
+      cupLiquid.style.height = newH + "%";
+      cupBody.classList.remove("pulse");
+      void cupBody.offsetWidth;
+      cupBody.classList.add("pulse");
+    };
+
+    function finish() {
+      running = false;
+      clearInterval(timer);
+      if (score > best) { best = score; bestEl.textContent = best; resultText.textContent = "新紀錄！" + score + " 口！"; }
+      else resultText.textContent = "你喝了 " + score + " 口";
+    }
+  </script>
+</body>
+</html>
